@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+DB_PATH="/home/john/.config/ada-love-ide/ada_love.db"
+
+echo -e "${CYAN}╔════════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║${BOLD}  Teste Real - Workers Table                 ${NC}${CYAN}║${NC}"
+echo -e "${CYAN}╚════════════════════════════════════════════════╝${NC}"
+echo ""
+
+# check if database exists
+if [ ! -f "$DB_PATH" ]; then
+    echo -e "${RED}❌ Banco de dados não encontrado: $DB_PATH${NC}"
+    exit 1
+fi
+
+echo -e "${BLUE}📁 Banco: $DB_PATH${NC}"
+echo ""
+
+# test 1: check if workers table exists
+echo -e "${YELLOW}1️⃣  Verificando tabela workers...${NC}"
+sqlite3 "$DB_PATH" "SELECT name FROM sqlite_master WHERE type='table' AND name='workers';" 2>/dev/null
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ Tabela workers existe${NC}"
+else
+    echo -e "${RED}❌ Tabela workers não existe${NC}"
+    exit 1
+fi
+echo ""
+
+# test 2: count workers
+echo -e "${YELLOW}2️⃣  Contando workers...${NC}"
+COUNT=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM workers;" 2>/dev/null)
+echo -e "${GREEN}📊 Total de workers: $COUNT${NC}"
+echo ""
+
+# test 3: list all workers
+echo -e "${YELLOW}3️⃣  Listando todos os workers...${NC}"
+sqlite3 "$DB_PATH" "SELECT id, name, connection_type, response_language FROM workers ORDER BY name;" 2>/dev/null | while read line; do
+    echo -e "  ${GREEN}→${NC} $line"
+done
+echo ""
+
+# test 4: show table schema
+echo -e "${YELLOW}4️⃣  Schema da tabela workers...${NC}"
+sqlite3 "$DB_PATH" ".schema workers" 2>/dev/null
+echo ""
+
+# test 5: check foreign keys
+echo -e "${YELLOW}5️⃣  Verificando foreign keys...${NC}"
+sqlite3 "$DB_PATH" "PRAGMA foreign_key_list('workers');" 2>/dev/null | while read line; do
+    if [ -n "$line" ]; then
+        echo -e "  ${GREEN}→${NC} $line"
+    fi
+done
+echo ""
+
+# test 6: check WAL mode
+echo -e "${YELLOW}6️⃣  Verificando modo WAL...${NC}"
+JOURNAL_MODE=$(sqlite3 "$DB_PATH" "PRAGMA journal_mode;" 2>/dev/null)
+echo -e "${GREEN}📝 Journal Mode: $JOURNAL_MODE${NC}"
+echo ""
+
+# test 7: check foreign key enforcement
+echo -e "${YELLOW}7️⃣  Verificando foreign_keys...${NC}"
+FK_STATUS=$(sqlite3 "$DB_PATH" "PRAGMA foreign_keys;" 2>/dev/null)
+echo -e "${GREEN}🔗 Foreign Keys: $FK_STATUS${NC}"
+echo ""
+
+echo -e "${GREEN}✅ Teste concluído com sucesso!${NC}"
