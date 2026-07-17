@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"os"
 	"testing"
@@ -9,7 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// openRealDB opens the real ada-love-ide database for integration tests
+// openRealDB opens the real ada-love-ide database for integration tests and ensures migrations are applied
 func openRealDB(t *testing.T) *sql.DB {
 	t.Helper()
 	dbPath := "/home/john/.config/ada-love-ide/ada_love.db"
@@ -21,6 +22,13 @@ func openRealDB(t *testing.T) *sql.DB {
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
 	}
+
+	// Ensure migrations are run on the real DB for integration tests
+	if err := RunMigrations(context.Background(), db); err != nil {
+		db.Close()
+		t.Fatalf("Failed to run migrations on real DB: %v", err)
+	}
+
 	return db
 }
 

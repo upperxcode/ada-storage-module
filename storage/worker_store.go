@@ -71,6 +71,39 @@ func (s *WorkerStore) GetWorker(ctx context.Context, id int64) (*Worker, error) 
 	return &worker, nil
 }
 
+// GetWorkerByName retrieves a worker by name.
+func (s *WorkerStore) GetWorkerByName(ctx context.Context, name string) (*Worker, error) {
+	query := `SELECT 
+		id, name, persona, response_language, connection_type, command, arguments, environment,
+		inheritance_folders, inheritance_skills, inheritance_persona, inheritance_knowledge,
+		inheritance_tools, color, icon
+		FROM workers WHERE name = ?`
+
+	var worker Worker
+	var connFolders, connSkills, connPersona, connKnowledge, connTools int
+	err := s.db.QueryRowContext(ctx, query, name).Scan(
+		&worker.ID, &worker.Name, &worker.Persona, &worker.ResponseLanguage,
+		&worker.ConnectionType, &worker.Command, &worker.Arguments, &worker.Environment,
+		&connFolders, &connSkills, &connPersona, &connKnowledge, &connTools,
+		&worker.Color, &worker.Icon,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrWorkerNotFound
+		}
+		return nil, fmt.Errorf("failed to get worker by name: %w", err)
+	}
+
+	worker.InheritanceFolders = connFolders == 1
+	worker.InheritanceSkills = connSkills == 1
+	worker.InheritancePersona = connPersona == 1
+	worker.InheritanceKnowledge = connKnowledge == 1
+	worker.InheritanceTools = connTools == 1
+
+	return &worker, nil
+}
+
 // UpdateWorker updates an existing worker.
 func (s *WorkerStore) UpdateWorker(ctx context.Context, worker *Worker) error {
 	query := `UPDATE workers SET

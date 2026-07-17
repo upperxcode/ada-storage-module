@@ -6,17 +6,21 @@ import (
 	"fmt"
 )
 
-// WorkspaceAgentsStore handles persistence operations for workspace-agent associations.
+type WorkspaceAgent struct {
+	ID          int64  `json:"id"`
+	WorkspaceID int64  `json:"workspace_id"`
+	AgentID     int64  `json:"agent_id"`
+	Enabled     bool   `json:"enabled"`
+}
+
 type WorkspaceAgentsStore struct {
 	db *sql.DB
 }
 
-// NewWorkspaceAgentsStore creates a new WorkspaceAgentsStore instance.
 func NewWorkspaceAgentsStore(db *sql.DB) *WorkspaceAgentsStore {
 	return &WorkspaceAgentsStore{db: db}
 }
 
-// AddAgent adds an agent to a workspace.
 func (s *WorkspaceAgentsStore) AddAgent(ctx context.Context, link *WorkspaceAgent) error {
 	query := `INSERT INTO workspace_agents (workspace_id, agent_id, enabled) VALUES (?, ?, ?)`
 	_, err := s.db.ExecContext(ctx, query, link.WorkspaceID, link.AgentID, link.Enabled)

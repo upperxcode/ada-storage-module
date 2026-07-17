@@ -36,13 +36,18 @@ func NewToolProfileStore(db *sql.DB) *ToolProfileStore {
 	return &ToolProfileStore{db: db}
 }
 
-// CreateProfile creates a new tool profile.
+// CreateProfile creates a new tool profile and sets its ID to the auto-incremented value.
 func (s *ToolProfileStore) CreateProfile(ctx context.Context, profile *ToolProfile) error {
 	query := `INSERT INTO tool_profiles (name, description, color, icon) VALUES (?, ?, ?, ?)`
-	_, err := s.db.ExecContext(ctx, query, profile.Name, profile.Description, profile.Color, profile.Icon)
+	result, err := s.db.ExecContext(ctx, query, profile.Name, profile.Description, profile.Color, profile.Icon)
 	if err != nil {
 		return fmt.Errorf("failed to create tool profile: %w", err)
 	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("failed to get last insert id: %w", err)
+	}
+	profile.ID = id
 	return nil
 }
 
@@ -106,6 +111,16 @@ func (s *ToolProfileStore) AddTool(ctx context.Context, tool *ToolProfileTool) e
 	return nil
 }
 
+// RemoveTool removes a tool from a profile.
+func (s *ToolProfileStore) RemoveTool(ctx context.Context, profileID int64, toolName string) error {
+	query := `DELETE FROM tool_profile_tools WHERE profile_id = ? AND tool_name = ?`
+	_, err := s.db.ExecContext(ctx, query, profileID, toolName)
+	if err != nil {
+		return fmt.Errorf("failed to remove tool from profile: %w", err)
+	}
+	return nil
+}
+
 // ListTools retrieves all tools for a profile.
 func (s *ToolProfileStore) ListTools(ctx context.Context, profileID int64) ([]ToolProfileTool, error) {
 	rows, err := s.db.QueryContext(ctx,
@@ -126,4 +141,35 @@ func (s *ToolProfileStore) ListTools(ctx context.Context, profileID int64) ([]To
 		tools = append(tools, t)
 	}
 	return tools, nil
+}
+
+// UpdateProfile updates an existing tool profile.
+func (s *ToolProfileStore) UpdateProfile(ctx context.Context, profile *ToolProfile) error {
+	query := `UPDATE tool_profiles SET name = ?, description = ?, color = ?, icon = ? WHERE id = ?`
+	result, err := s.db.ExecContext(ctx, query, profile.Name, profile.Description, profile.Color, profile.Icon, profile.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update tool profile: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
+		return ErrToolProfileNotFound
+	}
+	return nil
+}
+
+// GetProfileByName retrieves a tool profile by name.
+func (s *ToolProfileStore) GetProfileByName(ctx context.Context, name string) (*ToolProfile, error) {
+	query := `SELECT id, name, description, color, icon FROM tool_profiles WHERE name = ?`
+	var profile ToolProfile
+	err := s.db.QueryRowContext(ctx, query, name).Scan(&profile.ID, &profile.Name, &profile.Description, &profile.Color, &profile.Icon)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrToolProfileNotFound
+		}
+		return nil, fmt.Errorf("failed to get tool profile by name: %w", err)
+	}
+	return &profile, nil
 }

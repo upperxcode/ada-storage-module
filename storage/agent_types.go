@@ -72,4 +72,6 @@ type Skill struct {
 	Description sql.NullString `json:"description"`
 	Tags        sql.NullString `json:"tags"`
 	Content     string         `json:"content"`
+	Color       string         `json:"color"`
+	Icon        string         `json:"icon"`
 }

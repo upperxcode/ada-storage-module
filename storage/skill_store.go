@@ -19,10 +19,10 @@ func NewSkillStore(db *sql.DB) *SkillStore {
 
 // CreateSkill creates a new skill.
 func (s *SkillStore) CreateSkill(ctx context.Context, skill *Skill) error {
-	query := `INSERT INTO skills (name, description, tags, content)
-			  VALUES (?, ?, ?, ?)`
+	query := `INSERT INTO skills (name, description, tags, content, color, icon)
+			  VALUES (?, ?, ?, ?, ?, ?)`
 
-	_, err := s.db.ExecContext(ctx, query, skill.Name, skill.Description, skill.Tags, skill.Content)
+	_, err := s.db.ExecContext(ctx, query, skill.Name, skill.Description, skill.Tags, skill.Content, skill.Color, skill.Icon)
 	if err != nil {
 		return fmt.Errorf("failed to create skill: %w", err)
 	}
@@ -31,11 +31,11 @@ func (s *SkillStore) CreateSkill(ctx context.Context, skill *Skill) error {
 
 // GetSkill retrieves a skill by ID.
 func (s *SkillStore) GetSkill(ctx context.Context, id int64) (*Skill, error) {
-	query := `SELECT id, name, description, tags, content FROM skills WHERE id = ?`
+	query := `SELECT id, name, description, tags, content, color, icon FROM skills WHERE id = ?`
 
 	var skill Skill
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
-		&skill.ID, &skill.Name, &skill.Description, &skill.Tags, &skill.Content,
+		&skill.ID, &skill.Name, &skill.Description, &skill.Tags, &skill.Content, &skill.Color, &skill.Icon,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -49,10 +49,10 @@ func (s *SkillStore) GetSkill(ctx context.Context, id int64) (*Skill, error) {
 
 // UpdateSkill updates an existing skill.
 func (s *SkillStore) UpdateSkill(ctx context.Context, skill *Skill) error {
-	query := `UPDATE skills SET name = ?, description = ?, tags = ?, content = ? WHERE id = ?`
+	query := `UPDATE skills SET name = ?, description = ?, tags = ?, content = ?, color = ?, icon = ? WHERE id = ?`
 
 	_, err := s.db.ExecContext(ctx, query,
-		skill.Name, skill.Description, skill.Tags, skill.Content, skill.ID,
+		skill.Name, skill.Description, skill.Tags, skill.Content, skill.Color, skill.Icon, skill.ID,
 	)
 
 	if err != nil {
@@ -83,7 +83,7 @@ func (s *SkillStore) DeleteSkill(ctx context.Context, id int64) error {
 // ListSkills retrieves all skills.
 func (s *SkillStore) ListSkills(ctx context.Context) ([]Skill, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, name, description, tags, content FROM skills ORDER BY name ASC`,
+		`SELECT id, name, description, tags, content, color, icon FROM skills ORDER BY name ASC`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query skills: %w", err)
@@ -93,7 +93,7 @@ func (s *SkillStore) ListSkills(ctx context.Context) ([]Skill, error) {
 	var skills []Skill
 	for rows.Next() {
 		var skill Skill
-		if err := rows.Scan(&skill.ID, &skill.Name, &skill.Description, &skill.Tags, &skill.Content); err != nil {
+		if err := rows.Scan(&skill.ID, &skill.Name, &skill.Description, &skill.Tags, &skill.Content, &skill.Color, &skill.Icon); err != nil {
 			return nil, fmt.Errorf("failed to scan skill: %w", err)
 		}
 		skills = append(skills, skill)
@@ -105,7 +105,7 @@ func (s *SkillStore) ListSkills(ctx context.Context) ([]Skill, error) {
 // SearchSkills searches skills by keyword in name or content.
 func (s *SkillStore) SearchSkills(ctx context.Context, keyword string) ([]Skill, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, name, description, tags, content 
+		`SELECT id, name, description, tags, content, color, icon 
 		 FROM skills 
 		 WHERE name LIKE ? OR content LIKE ? 
 		 ORDER BY name ASC`,
@@ -119,7 +119,7 @@ func (s *SkillStore) SearchSkills(ctx context.Context, keyword string) ([]Skill,
 	var skills []Skill
 	for rows.Next() {
 		var skill Skill
-		if err := rows.Scan(&skill.ID, &skill.Name, &skill.Description, &skill.Tags, &skill.Content); err != nil {
+		if err := rows.Scan(&skill.ID, &skill.Name, &skill.Description, &skill.Tags, &skill.Content, &skill.Color, &skill.Icon); err != nil {
 			return nil, fmt.Errorf("failed to scan skill: %w", err)
 		}
 		skills = append(skills, skill)
@@ -219,6 +219,32 @@ func (s *AgentStore) DeleteAgent(ctx context.Context, id int64) error {
 	}
 
 	return nil
+}
+
+// GetAgentByName retrieves an agent by name.
+func (s *AgentStore) GetAgentByName(ctx context.Context, name string) (*Agent, error) {
+	query := `SELECT 
+		id, name, description, type, provider_id, model_id, max_iteration, temperature,
+		system_prompt, color, icon
+		FROM agents WHERE name = ?`
+
+	var agent Agent
+	var typeStr string
+	err := s.db.QueryRowContext(ctx, query, name).Scan(
+		&agent.ID, &agent.Name, &agent.Description, &typeStr, &agent.ProviderID,
+		&agent.ModelID, &agent.MaxIteration, &agent.Temperature, &agent.SystemPrompt,
+		&agent.Color, &agent.Icon,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrAgentNotFound
+		}
+		return nil, fmt.Errorf("failed to get agent by name: %w", err)
+	}
+
+	agent.Type = AgentType(typeStr)
+	return &agent, nil
 }
 
 // ListAgents retrieves all agents.

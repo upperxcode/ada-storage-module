@@ -47,7 +47,19 @@ const (
 		name TEXT NOT NULL,
 		description TEXT,
 		tags TEXT,
-		content TEXT NOT NULL
+		content TEXT NOT NULL,
+		color TEXT DEFAULT '',
+		icon TEXT DEFAULT ''
 	);
+	`
+
+	// skillAddColor adds color column to skills for existing DBs
+	skillAddColor = `
+	ALTER TABLE skills ADD COLUMN color TEXT DEFAULT '';
+	`
+
+	// skillAddIcon adds icon column to skills for existing DBs
+	skillAddIcon = `
+	ALTER TABLE skills ADD COLUMN icon TEXT DEFAULT '';
 	`
 )

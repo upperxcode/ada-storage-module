@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 )
 
 // Migration represents a single database migration.
@@ -70,7 +71,15 @@ func RunMigrations(ctx context.Context, db *sql.DB) error {
 		{27, appStateTable},
 		{28, routerConfigsTable},
 		{29, schemaMigrationsTable},
-	}
+		{30, mcpAddURL},
+		{31, mcpAddEnabled},
+			{32, mcpAddTimeout},
+			{33, mcpAddOAuthClientID},
+			{34, skillAddColor},
+			{35, skillAddIcon},
+			{36, specWizardAddDepManifest},
+			{37, specWizardAddStackPlugin},
+		}
 
 	for _, m := range migrations {
 		if m.version <= currentVersion {
@@ -87,11 +96,16 @@ func RunMigrations(ctx context.Context, db *sql.DB) error {
 		}
 
 		if _, err := tx.ExecContext(ctx, m.upSQL); err != nil {
-			log.Printf("[DB] Migration failed: v%d - %v", m.version, err)
-			if rbErr := tx.Rollback(); rbErr != nil {
-				return fmt.Errorf("migration v%d failed and rollback failed: %w, rollback error: %v", m.version, err, rbErr)
+			// Se o erro for "duplicate column name", ignoramos e marcamos como aplicada
+			if strings.Contains(err.Error(), "duplicate column name") {
+				log.Printf("[DB] Column already exists in migration v%d, marking as applied", m.version)
+			} else {
+				log.Printf("[DB] Migration failed: v%d - %v", m.version, err)
+				if rbErr := tx.Rollback(); rbErr != nil {
+					return fmt.Errorf("migration v%d failed and rollback failed: %w, rollback error: %v", m.version, err, rbErr)
+				}
+				return fmt.Errorf("migration v%d failed: %w", m.version, err)
 			}
-			return fmt.Errorf("migration v%d failed: %w", m.version, err)
 		}
 
 		// Record migration as applied

@@ -26,9 +26,21 @@ const (
 		color TEXT DEFAULT '#3b82f6',
 		icon TEXT DEFAULT '📝',
 		architecture_health INTEGER DEFAULT 0,
+		dependency_manifest TEXT DEFAULT '[]',
+		stack_plugin TEXT DEFAULT '',
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
+	`
+
+	// specWizardAddDepManifest adds dependency_manifest column
+	specWizardAddDepManifest = `
+	ALTER TABLE spec_wizards ADD COLUMN dependency_manifest TEXT DEFAULT '[]';
+	`
+
+	// specWizardAddStackPlugin adds stack_plugin column
+	specWizardAddStackPlugin = `
+	ALTER TABLE spec_wizards ADD COLUMN stack_plugin TEXT DEFAULT '';
 	`
 
 	// mcpsTable creates the mcps table
@@ -40,9 +52,33 @@ const (
 		command TEXT,
 		arguments TEXT,
 		environment TEXT,
+		url TEXT DEFAULT '',
+		enabled INTEGER DEFAULT 1,
+		timeout INTEGER DEFAULT 30,
+		oauth_client_id TEXT DEFAULT '',
 		color TEXT DEFAULT '',
 		icon TEXT DEFAULT ''
 	);
+	`
+
+	// mcpAddURL adds url column to mcps
+	mcpAddURL = `
+	ALTER TABLE mcps ADD COLUMN url TEXT DEFAULT '';
+	`
+
+	// mcpAddEnabled adds enabled column to mcps
+	mcpAddEnabled = `
+	ALTER TABLE mcps ADD COLUMN enabled INTEGER DEFAULT 1;
+	`
+
+	// mcpAddTimeout adds timeout column to mcps
+	mcpAddTimeout = `
+	ALTER TABLE mcps ADD COLUMN timeout INTEGER DEFAULT 30;
+	`
+
+	// mcpAddOAuthClientID adds oauth_client_id column to mcps
+	mcpAddOAuthClientID = `
+	ALTER TABLE mcps ADD COLUMN oauth_client_id TEXT DEFAULT '';
 	`
 
 	// workspaceTemplatesTable creates the workspace_templates table
