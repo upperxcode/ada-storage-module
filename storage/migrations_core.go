@@ -31,7 +31,7 @@ const (
 	CREATE TABLE IF NOT EXISTS messages (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		session_id TEXT NOT NULL,
-		role TEXT NOT NULL CHECK(role IN ('user','assistant','system','tool')),
+		role TEXT NOT NULL CHECK(role IN ('user','assistant','system','tool','thinking')),
 		content TEXT NOT NULL,
 		tokens INTEGER DEFAULT 0,
 		time DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -71,5 +71,37 @@ const (
 		version INTEGER PRIMARY KEY,
 		applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	);
+	`
+
+	// thinkingsTable creates the thinkings table
+	thinkingsTable = `
+	CREATE TABLE IF NOT EXISTS thinkings (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		message_id TEXT NOT NULL,
+		session_id TEXT NOT NULL,
+		content TEXT NOT NULL,
+		duration INTEGER DEFAULT 0,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	`
+
+	// messagesAddThinkingRole recreates the messages table to allow 'thinking' role
+	// for databases created before the CHECK constraint was updated.
+	messagesAddThinkingRole = `
+		CREATE TABLE IF NOT EXISTS messages_new (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			session_id TEXT NOT NULL,
+			role TEXT NOT NULL,
+			content TEXT NOT NULL,
+			tokens INTEGER DEFAULT 0,
+			time DATETIME DEFAULT CURRENT_TIMESTAMP,
+			served_by TEXT,
+			FOREIGN KEY(session_id) REFERENCES sessions(id) ON DELETE CASCADE
+		);
+		INSERT INTO messages_new SELECT * FROM messages;
+		DROP TABLE messages;
+		ALTER TABLE messages_new RENAME TO messages;
+		CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, time);
+		CREATE INDEX IF NOT EXISTS idx_messages_time ON messages(time);
 	`
 )

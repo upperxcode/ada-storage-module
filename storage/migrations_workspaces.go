@@ -97,4 +97,14 @@ const (
 		FOREIGN KEY(worker_id) REFERENCES workers(id) ON DELETE CASCADE
 	);
 	`
+
+	// workspaceKnowledgeTable creates the workspace_knowledge junction table
+	workspaceKnowledgeTable = `
+	CREATE TABLE IF NOT EXISTS workspace_knowledge (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		workspace_id INTEGER NOT NULL,
+		knowledge_item TEXT NOT NULL,
+		FOREIGN KEY(workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
+	);
+	`
 )

@@ -1,0 +1,4 @@
+INSERT INTO [workers] ([id], [name], [persona], [response_language], [connection_type], [command], [arguments], [environment], [inheritance_folders], [inheritance_skills], [inheritance_persona], [inheritance_knowledge], [inheritance_tools], [color], [icon]) VALUES (263, 'Ada-Workder', 'Você é um assistente de IA especializado em desenvolvimento de software.
+Responda perguntas de forma útil e direta. Para perguntas gerais sobre tecnologia,
+programação ou qualquer assunto, responda normalmente.', '', 'ada', '{"command":"ada"}', NULL, NULL, 1, 1, 1, 1, 1, '#3b82f6', '🤖');
+INSERT INTO [workers] ([id], [name], [persona], [response_language], [connection_type], [command], [arguments], [environment], [inheritance_folders], [inheritance_skills], [inheritance_persona], [inheritance_knowledge], [inheritance_tools], [color], [icon]) VALUES (264, 'novo3', 'novo2', 'pt-BR', 'ada', NULL, NULL, NULL, 1, 1, 1, 1, 1, '#ef4444', '🎮');

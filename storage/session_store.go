@@ -227,6 +227,55 @@ func (s *SessionStore) DeleteMessages(ctx context.Context, sessionID string) err
 	return nil
 }
 
+// GetMessagesByRole retrieves all messages for a session filtered by role.
+// Returns ErrSessionNotFound if the session does not exist.
+func (s *SessionStore) GetMessagesByRole(ctx context.Context, sessionID string, role string) ([]Message, error) {
+	// Verify session exists
+	var exists bool
+	err := s.db.QueryRowContext(ctx,
+		`SELECT EXISTS(SELECT 1 FROM sessions WHERE id = ?)`,
+		sessionID,
+	).Scan(&exists)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check session existence: %w", err)
+	}
+	if !exists {
+		return nil, ErrSessionNotFound
+	}
+
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, session_id, role, content, tokens, time, served_by
+		 FROM messages WHERE session_id = ? AND role = ? ORDER BY time ASC`,
+		sessionID, role,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query messages by role: %w", err)
+	}
+	defer rows.Close()
+
+	var messages []Message
+	for rows.Next() {
+		var msg Message
+		if err := rows.Scan(&msg.ID, &msg.SessionID, &msg.Role, &msg.Content,
+			&msg.Tokens, &msg.Time, &msg.ServedBy); err != nil {
+			return nil, fmt.Errorf("failed to scan message: %w", err)
+		}
+		messages = append(messages, msg)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating messages: %w", err)
+	}
+
+	return messages, nil
+}
+
+// GetThinkingMessages is a convenience wrapper around GetMessagesByRole
+// that retrieves only messages with role='thinking'.
+func (s *SessionStore) GetThinkingMessages(ctx context.Context, sessionID string) ([]Message, error) {
+	return s.GetMessagesByRole(ctx, sessionID, "thinking")
+}
+
 // ListSessions retrieves all sessions, optionally filtered by workspace.
 func (s *SessionStore) ListSessions(ctx context.Context, workspacePath string) ([]Session, error) {
 	var rows *sql.Rows

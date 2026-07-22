@@ -31,6 +31,15 @@ const (
 	);
 	`
 
+	// addStrategyToProviders adds the strategy column to providers
+	addStrategyToProviders = `ALTER TABLE providers ADD COLUMN strategy TEXT DEFAULT '';`
+
+	// addProviderModelContextSize adds context_size and max_tokens columns to provider_models
+	addProviderModelContextSize = `
+	ALTER TABLE provider_models ADD COLUMN context_size INTEGER NOT NULL DEFAULT 0;
+	ALTER TABLE provider_models ADD COLUMN max_tokens INTEGER NOT NULL DEFAULT 0;
+	`
+
 	// providerApikeysTable creates the provider_apikeys table
 	providerApikeysTable = `
 	CREATE TABLE IF NOT EXISTS provider_apikeys (

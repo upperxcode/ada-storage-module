@@ -79,7 +79,12 @@ func RunMigrations(ctx context.Context, db *sql.DB) error {
 			{35, skillAddIcon},
 			{36, specWizardAddDepManifest},
 			{37, specWizardAddStackPlugin},
-		}
+			{38, addStrategyToProviders},
+		{39, workspaceKnowledgeTable},
+		{40, addProviderModelContextSize},
+		{41, thinkingsTable},
+		{42, messagesAddThinkingRole},
+	}
 
 	for _, m := range migrations {
 		if m.version <= currentVersion {

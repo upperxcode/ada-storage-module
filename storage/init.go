@@ -52,6 +52,7 @@ func HealthCheck(ctx context.Context, db *sql.DB) error {
 	tables := []string{
 		"sessions", "messages", "providers", "provider_models",
 		"config", "greetings", "workspaces", "agents", "workers", "skills",
+		"thinkings",
 	}
 	for _, table := range tables {
 		var exists bool

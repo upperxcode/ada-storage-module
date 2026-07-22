@@ -19,26 +19,39 @@ func NewProviderStore(db *sql.DB) *ProviderStore {
 
 // CreateProvider creates a new provider.
 func (s *ProviderStore) CreateProvider(ctx context.Context, provider *Provider) error {
-	query := `INSERT INTO providers (name, api_url, connection_types, color, icon)
-			  VALUES (?, ?, ?, ?, ?)`
+	query := `INSERT INTO providers (name, api_url, connection_types, color, icon, strategy)
+			  VALUES (?, ?, ?, ?, ?, ?)`
 
 	_, err := s.db.ExecContext(ctx, query,
-		provider.Name, provider.APIURL, provider.ConnectionTypes, provider.Color, provider.Icon,
+		provider.Name, provider.APIURL, provider.ConnectionTypes, provider.Color, provider.Icon, provider.Strategy,
 	)
-	if err != nil {
-		return fmt.Errorf("failed to create provider: %w", err)
+		if err != nil {
+			return fmt.Errorf("failed to create provider: %w", err)
+		}
+		return nil
 	}
-	return nil
-}
+	
+	// UpdateProvider updates an existing provider.
+	func (s *ProviderStore) UpdateProvider(ctx context.Context, provider *Provider) error {
+		query := `UPDATE providers SET name = ?, api_url = ?, connection_types = ?, color = ?, icon = ?, strategy = ? WHERE id = ?`
+
+		_, err := s.db.ExecContext(ctx, query,
+			provider.Name, provider.APIURL, provider.ConnectionTypes, provider.Color, provider.Icon, provider.Strategy, provider.ID,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to update provider: %w", err)
+		}
+		return nil
+	}
 
 // GetProvider retrieves a provider by ID.
 func (s *ProviderStore) GetProvider(ctx context.Context, id int64) (*Provider, error) {
-	query := `SELECT id, name, api_url, connection_types, color, icon FROM providers WHERE id = ?`
+	query := `SELECT id, name, api_url, connection_types, color, icon, strategy FROM providers WHERE id = ?`
 
 	var provider Provider
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&provider.ID, &provider.Name, &provider.APIURL, &provider.ConnectionTypes,
-		&provider.Color, &provider.Icon,
+		&provider.Color, &provider.Icon, &provider.Strategy,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -52,12 +65,12 @@ func (s *ProviderStore) GetProvider(ctx context.Context, id int64) (*Provider, e
 
 // GetProviderByName retrieves a provider by name.
 func (s *ProviderStore) GetProviderByName(ctx context.Context, name string) (*Provider, error) {
-	query := `SELECT id, name, api_url, connection_types, color, icon FROM providers WHERE name = ?`
+	query := `SELECT id, name, api_url, connection_types, color, icon, strategy FROM providers WHERE name = ?`
 
 	var provider Provider
 	err := s.db.QueryRowContext(ctx, query, name).Scan(
 		&provider.ID, &provider.Name, &provider.APIURL, &provider.ConnectionTypes,
-		&provider.Color, &provider.Icon,
+		&provider.Color, &provider.Icon, &provider.Strategy,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -72,7 +85,7 @@ func (s *ProviderStore) GetProviderByName(ctx context.Context, name string) (*Pr
 // ListProviders retrieves all providers.
 func (s *ProviderStore) ListProviders(ctx context.Context) ([]Provider, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, name, api_url, connection_types, color, icon FROM providers ORDER BY name ASC`,
+		`SELECT id, name, api_url, connection_types, color, icon, strategy FROM providers ORDER BY name ASC`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query providers: %w", err)
@@ -82,7 +95,7 @@ func (s *ProviderStore) ListProviders(ctx context.Context) ([]Provider, error) {
 	var providers []Provider
 	for rows.Next() {
 		var p Provider
-		if err := rows.Scan(&p.ID, &p.Name, &p.APIURL, &p.ConnectionTypes, &p.Color, &p.Icon); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.APIURL, &p.ConnectionTypes, &p.Color, &p.Icon, &p.Strategy); err != nil {
 			return nil, fmt.Errorf("failed to scan provider: %w", err)
 		}
 		providers = append(providers, p)

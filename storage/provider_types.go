@@ -25,19 +25,22 @@ type Provider struct {
 	ConnectionTypes sql.NullString `json:"connection_types"`
 	Color          string         `json:"color"`
 	Icon           string         `json:"icon"`
+	Strategy       sql.NullString `json:"strategy"`
 }
 
 // ProviderModel represents a model available from a provider.
 type ProviderModel struct {
-	ID        int64  `json:"id"`
-	ProviderID int64 `json:"provider_id"`
-	Model     string `json:"model"`
-	Free      bool   `json:"free"`
-	Thinking  bool   `json:"thinking"`
-	Tool      bool   `json:"tool"`
-	Embedding bool   `json:"embedding"`
-	Vision    bool   `json:"vision"`
-	Health    int    `json:"health"`
+	ID          int64  `json:"id"`
+	ProviderID  int64  `json:"provider_id"`
+	Model       string `json:"model"`
+	Free        bool   `json:"free"`
+	Thinking    bool   `json:"thinking"`
+	Tool        bool   `json:"tool"`
+	Embedding   bool   `json:"embedding"`
+	Vision      bool   `json:"vision"`
+	Health      int    `json:"health"`
+	ContextSize int    `json:"context_size,omitempty"`
+	MaxTokens   int    `json:"max_tokens,omitempty"`
 }
 
 // Greeting represents a greeting response for a keyword.
